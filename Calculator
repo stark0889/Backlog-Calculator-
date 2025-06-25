@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture Backlog Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        .doodle {
+            position: absolute;
+            opacity: 0.1;
+            z-index: 0;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6b46c1 0%, #4299e1 100%);
+        }
+        .result-card {
+            transition: all 0.3s ease;
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .day-progress {
+            height: 8px;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 relative overflow-x-hidden">
+    <!-- Doodle Elements -->
+    <div class="doodle top-20 left-5 animate-float" style="font-size: 60px;">📚</div>
+    <div class="doodle top-1/3 right-10 animate-float" style="font-size: 50px; animation-delay: 0.5s;">✏️</div>
+    <div class="doodle bottom-40 left-1/4 animate-float" style="font-size: 45px; animation-delay: 0.8s;">🎯</div>
+    <div class="doodle bottom-1/4 right-20 animate-float" style="font-size: 55px; animation-delay: 1.2s;">📝</div>
+    <div class="gradient-bg text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4">
+                <i class="fas fa-book-open mr-2"></i> Lecture Backlog Calculator
+            </h1>
+            <p class="text-xl opacity-90">
+                Calculate how many days you need to finish your lecture backlog
+            </p>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Motivational Quote Section -->
+        <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl shadow-sm p-6 mb-8 border border-pink-200 animate-fade-in">
+            <div class="text-center">
+                <i class="fas fa-quote-left text-pink-400 text-2xl opacity-50"></i>
+                <p id="motivationalQuote" class="text-xl font-medium text-gray-700 px-4 py-2 transition-all duration-500 ease-in-out"></p>
+                <i class="fas fa-quote-right text-pink-400 text-2xl opacity-50"></i>
+                <p id="quoteAuthor" class="text-sm text-gray-500 mt-2 italic transition-all duration-500 ease-in-out"></p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md overflow-hidden p-6 sm:p-8 mb-8">
+            <form id="calculatorForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="lectureLength" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-clock text-purple-600 mr-1"></i> Length of one lecture (minutes)
+                        </label>
+                        <input type="number" id="lectureLength" min="1" value="60" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                        <p class="mt-1 text-sm text-gray-500">For reference only (not used in calculations)</p>
+                    </div>
+
+                    <div>
+                        <label for="totalBacklog" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-tasks text-blue-600 mr-1"></i> Total lectures in backlog
+                        </label>
+                        <input type="number" id="totalBacklog" min="0" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="newLecturesPerDay" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-plus-circle text-green-600 mr-1"></i> New lectures added per day
+                        </label>
+                        <input type="number" id="newLecturesPerDay" min="0" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        <p class="mt-1 text-sm text-gray-500">(No new lectures on Sundays)</p>
+                    </div>
+
+                    <div>
+                        <label for="lecturesPerDay" class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-check-circle text-indigo-600 mr-1"></i> Lectures you can watch per day
+                        </label>
+                        <input type="number" id="lecturesPerDay" min="1" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                        class="w-full gradient-bg text-white font-bold py-3 px-4 rounded-lg hover:opacity-90 transition duration-300 flex items-center justify-center">
+                        <i class="fas fa-calculator mr-2"></i> Calculate
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="results" class="hidden bg-white rounded-xl shadow-md overflow-hidden p-6 sm:p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-line text-purple-600 mr-2"></i> Results
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="result-card bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-100 shadow-sm">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-purple-100 p-2 rounded-lg mr-3">
+                            <i class="fas fa-calendar-days text-purple-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700">Time Investment</h3>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Days Needed</p>
+                            <p class="text-2xl font-bold text-purple-600" id="totalDays">0</p>
+                        </div>
+                        <div class="pt-2 border-t border-purple-100">
+                            <p class="text-sm text-gray-500">Weeks Required</p>
+                            <p class="text-xl font-semibold text-purple-500" id="totalWeeks">0</p>
+                        </div>
+                        <div class="pt-2 border-t border-purple-100">
+                            <p class="text-sm text-gray-500">Total Watch Time</p>
+                            <p class="text-xl font-semibold text-purple-500" id="totalWatchTime">0 hours</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-blue-100 p-2 rounded-lg mr-3">
+                            <i class="fas fa-check-circle text-blue-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700">Progress Metrics</h3>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <p class="text-sm text-gray-500">Lectures Watched</p>
+                            <p class="text-2xl font-bold text-blue-600" id="totalWatched">0</p>
+                        </div>
+                        <div class="pt-2 border-t border-blue-100">
+                            <p class="text-sm text-gray-500">Daily Completion</p>
+                            <p class="text-xl font-semibold text-blue-500" id="dailyCompletion">0%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card bg-gradient-to-r from-indigo-50 to-green-50 p-6 rounded-xl border border-indigo-100 shadow-sm">
+                    <div class="flex items-center mb-3">
+                        <div class="bg-indigo-100 p-2 rounded-lg mr-3">
+                            <i class="fas fa-chart-line text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700">Workload</h3>
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <p class="text-sm text-gray-500">New Lectures Added</p>
+                            <p class="text-2xl font-bold text-indigo-600" id="totalAdded">0</p>
+                        </div>
+                        <div class="pt-2 border-t border-indigo-100">
+                            <p class="text-sm text-gray-500">Daily New Lectures</p>
+                            <p class="text-xl font-semibold text-indigo-500" id="dailyNewLectures">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center">
+                    <i class="fas fa-bullseye text-blue-500 mr-2"></i> Daily Target
+                </h3>
+                <p class="text-2xl font-bold text-blue-600 mb-1" id="dailyTarget">0</p>
+                <p class="text-sm text-gray-600">Watch this many lectures every day to finish in <span id="targetDays" class="font-semibold">0</span> days</p>
+            </div>
+
+            <div class="text-center text-gray-500 text-sm italic">
+                Made with ❣️ by STARK
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Motivational quotes array
+        const quotes = [
+            {
+                text: "The secret of getting ahead is getting started.",
+                author: "Mark Twain"
+            },
+            {
+                text: "You don't have to be great to start, but you have to start to be great.",
+                author: "Zig Ziglar"
+            },
+            {
+                text: "Small daily improvements are the key to staggering long-term results.",
+                author: "Robin Sharma"
+            },
+            {
+                text: "The expert in anything was once a beginner.",
+                author: "Helen Hayes"
+            },
+            {
+                text: "Every master was once a disaster. Every pro was once a noob.",
+                author: "Unknown"
+            }
+        ];
+
+        // Display random quote
+        function showRandomQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            const quote = quotes[randomIndex];
+            const quoteElement = document.getElementById('motivationalQuote');
+            const authorElement = document.getElementById('quoteAuthor');
+            
+            quoteElement.style.opacity = 0;
+            authorElement.style.opacity = 0;
+            
+            setTimeout(() => {
+                quoteElement.textContent = quote.text;
+                authorElement.textContent = `— ${quote.author}`;
+                quoteElement.style.opacity = 1;
+                authorElement.style.opacity = 1;
+            }, 300);
+        }
+
+        // Show initial quote
+        showRandomQuote();
+        // Change quote every 15 seconds
+        setInterval(showRandomQuote, 15000);
+
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get input values
+            const lectureLength = parseInt(document.getElementById('lectureLength').value);
+            const totalBacklog = parseInt(document.getElementById('totalBacklog').value);
+            const newLecturesPerDay = parseInt(document.getElementById('newLecturesPerDay').value);
+            const lecturesPerDay = parseInt(document.getElementById('lecturesPerDay').value);
+            
+            // Validate inputs
+            if (totalBacklog < 0 || newLecturesPerDay < 0 || lecturesPerDay < 1) {
+                alert('Please enter valid numbers (positive values for all fields, at least 1 lecture per day)');
+                return;
+            }
+            
+            // Calculate backlog completion
+            const result = calculateBacklog(totalBacklog, newLecturesPerDay, lecturesPerDay);
+            
+            // Display results
+            displayResults(result, lecturesPerDay);
+        });
+        
+        function calculateBacklog(initialBacklog, newPerDay, watchPerDay) {
+            let backlog = initialBacklog;
+            let day = 0;
+            let days = [];
+            let totalAdded = 0;
+            
+            while (backlog > 0) {
+                day++;
+                const dayOfWeek = (day - 1) % 7; // 0=Monday, 6=Sunday
+                const isSunday = dayOfWeek === 6;
+                
+                // Add new lectures (except on Sunday)
+                let addedToday = isSunday ? 0 : newPerDay;
+                backlog += addedToday;
+                totalAdded += addedToday;
+                
+                // Watch lectures
+                const watchedToday = Math.min(backlog, watchPerDay);
+                backlog -= watchedToday;
+                
+                days.push({
+                    dayNumber: day,
+                    dayName: getDayName(dayOfWeek),
+                    added: addedToday,
+                    watched: watchedToday,
+                    remaining: backlog,
+                    isSunday
+                });
+            }
+            
+            return {
+                totalDays: day,
+                days,
+                totalAdded,
+                totalWatched: initialBacklog + totalAdded,
+                newLecturesPerDay: newPerDay
+            };
+        }
+        
+        function getDayName(dayOfWeek) {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            return days[dayOfWeek];
+        }
+        
+        function displayResults(result, lecturesPerDay) {
+            // Basic metrics
+            document.getElementById('totalDays').textContent = result.totalDays;
+            document.getElementById('totalWatched').textContent = result.totalWatched;
+            document.getElementById('totalAdded').textContent = result.totalAdded;
+            
+            // New metrics
+            const totalWeeks = Math.ceil(result.totalDays / 7);
+            const dailyCompletion = Math.round((lecturesPerDay / (lecturesPerDay + result.newLecturesPerDay)) * 100);
+            const dailyNewLectures = result.newLecturesPerDay;
+            
+            document.getElementById('totalWeeks').textContent = totalWeeks;
+            document.getElementById('dailyCompletion').textContent = `${dailyCompletion}%`;
+            document.getElementById('dailyNewLectures').textContent = dailyNewLectures;
+            // Calculate total watch time in hours
+            const lectureLength = parseInt(document.getElementById('lectureLength').value);
+            const totalWatchHours = Math.round((result.totalWatched * lectureLength) / 60);
+            document.getElementById('totalWatchTime').textContent = `${totalWatchHours} hours`;
+            
+            document.getElementById('dailyTarget').textContent = lecturesPerDay;
+            document.getElementById('targetDays').textContent = result.totalDays;
+            
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('results').classList.add('animate-fade-in');
+            showRandomQuote(); // Show new quote when calculating
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
